@@ -1,39 +1,33 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <ScriptExport xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://www.kaseya.com/vsa/2008/12/Scripting">
-  <Procedure name="TreesizeHtml All Fixed Drives" treePres="3" id="922931006" folderId="21166922629153212171271981">
-    <Body description="">
-      <Statement description="Execute the specified procedure. - NOTE: this procedure does not complete until the called procedure completes." name="ExecuteScript" continueOnFail="false" osType="Windows">
-        <Parameter xsi:type="StringParameter" name="ScriptID" value="89705850" />
-        <Parameter xsi:type="StringParameter" name="ScriptName" value="Enable Powershell Automation" />
-        <Parameter xsi:type="StringParameter" name="TimeDelay" value="" />
-        <Parameter xsi:type="EnumParameter" name="TimeUnit" value="Immediate" />
-      </Statement>
-      <Statement description="Write the selected file to the machine at the path specified - full path required." name="WriteFile" continueOnFail="false" osType="Windows">
+  <Procedure name="TreeSizeHtml - All Fixed Drives" treePres="3" id="482453152" folderId="21166922629153212171271981">
+    <Body description="Generate a TreeSizeHtml report of all fixed drives on this agent">
+      <Statement description="Download the Powershell script to the agent" name="WriteFile" continueOnFail="false" osType="Windows">
         <Parameter xsi:type="StringParameter" name="Path" value="#vAgentConfiguration.agentTempDir#\TreeSizeHtml.ps1" />
         <Parameter xsi:type="StringParameter" name="ManagedFile" value="VSASharedFiles\TreeSizeHtml.ps1" />
         <Parameter xsi:type="BooleanParameter" name="DeleteAfter" value="False" />
       </Statement>
-      <Statement description="Execute the given command as if it were typed in at a command prompt." name="ExecuteShellCommand" continueOnFail="false">
+      <Statement description="Output the current year,month and date to currentDateString.txt&#xA;e.g. &quot;2012_10_30&quot;" name="ExecuteShellCommand" continueOnFail="false">
         <Parameter xsi:type="StringParameter" name="Command" value="FOR /F &quot;tokens=2-4 delims=/-/ &quot; %A IN (&quot;%date%&quot;) DO (echo %C_%B_%A&gt;&gt; #vAgentConfiguration.agentTempDir#\currentDateString.txt)" />
         <Parameter xsi:type="EnumParameter" name="ExecuteAccount" value="System" />
         <Parameter xsi:type="BooleanParameter" name="Is64Bit" value="False" />
       </Statement>
-      <Statement description="Create a named procedure variable and assign a value retrieved from the managed machine by the agent." name="GetVariable" continueOnFail="false">
+      <Statement description="Read in the date string from currentDateString.txt&#xA;e.g. &quot;2012_10_30&quot;" name="GetVariable" continueOnFail="false">
         <Parameter xsi:type="EnumParameter" name="VariableType" value="FileContent" />
         <Parameter xsi:type="StringParameter" name="SourceContent" value="#vAgentConfiguration.agentTempDir#\currentDateString.txt" />
         <Parameter xsi:type="StringParameter" name="VariableName" value="currentDateString" />
       </Statement>
-      <Statement description="Create a named procedure variable and assign a value retrieved from the managed machine by the agent." name="GetVariable" continueOnFail="false">
+      <Statement description="Build the name for the zip file based on the current date" name="GetVariable" continueOnFail="false">
         <Parameter xsi:type="EnumParameter" name="VariableType" value="ConstantValue" />
         <Parameter xsi:type="StringParameter" name="SourceContent" value="DiskSpaceReport_#currentDateString#.zip" />
         <Parameter xsi:type="StringParameter" name="VariableName" value="zipFileName" />
       </Statement>
-      <Statement description="Execute Powershell Command (32-bit, Run As System)" name="Execute Powershell Command (32-bit, Run As System)" continueOnFail="false">
+      <Statement description="Execute the report" name="Execute Powershell Command (32-bit, Run As System)" continueOnFail="false">
         <Parameter xsi:type="StringParameter" name="Parameter1" value="#vAgentConfiguration.agentTempDir#\TreeSizeHtml.ps1" />
         <Parameter xsi:type="StringParameter" name="Parameter2" value="-paths ALL -reportOutputFolder #vAgentConfiguration.agentTempDir# -zipOutputFilename #zipFileName#" />
         <Parameter xsi:type="StringParameter" name="Parameter3" value="false" />
       </Statement>
-      <Statement description="Get the specified file - full path to file required." name="GetFile" continueOnFail="false" osType="Windows">
+      <Statement description="Upload the resulting zip file" name="GetFile" continueOnFail="false" osType="Windows">
         <Parameter xsi:type="StringParameter" name="RemoteFileName" value="#vAgentConfiguration.agentTempDir#\#zipFileName#" />
         <Parameter xsi:type="StringParameter" name="KServerFileName" value="#zipFileName#" />
         <Parameter xsi:type="EnumParameter" name="Action" value="OverwriteNoAlert" />
