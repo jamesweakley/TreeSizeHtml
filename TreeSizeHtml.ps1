@@ -134,17 +134,20 @@ function TreeSizeHtml {
     $pathsArray = @();
     $htmlFilenamesArray = @();
     
+    write-host $reportOutputFolder
     # check output folder exists
     if (!($reportOutputFolder.EndsWith("\")))
     {
-        $reportOutputFolder += "\"
+        $reportOutputFolder = $reportOutputFolder + "\"
     }
+    write-host $reportOutputFolder
     $reportOutputFolderInfo = New-Object System.IO.DirectoryInfo $reportOutputFolder
     if (!$reportOutputFolderInfo.Exists)
     {
         Throw "Report output folder $reportOutputFolder does not exist"
     }
     
+    write-host $reportOutputFolder
     # passing in "ALL" means that all fixed disks are to be included in the report
     if ($paths -eq "ALL")
     {
@@ -394,53 +397,83 @@ The path to the current folder in the tree
 #>
 function buildDirectoryTree_Recursive {  
         param (  
-            [Parameter(Mandatory=$true)][Object] $currentNode,  
-            [Parameter(Mandatory=$true)][String] $currentPath 
+            [Parameter(Mandatory=$true)][Object] $currentParentDirInfo,  
+            [Parameter(Mandatory=$true)][String] $currentDirInfo 
         )  
-        
+    $substDriveLetter = $null
     # Get the directory info of the current path
-    $dirInfo = New-Object System.IO.DirectoryInfo $currentPath 
+
+    # if the current directory length is too long, try to work around the feeble Windows size limit by using the subst command
+    if ($currentDirInfo.Length -gt 248)
+    {
+        Write-Host "$currentDirInfo has a length of $($currentDirInfo.Length), greater than the maximum 248, invoking workaround"
+        $substDriveLetter = ls function:[d-z]: -n | ?{ !(test-path $_) } | select -First 1
+        $parentFolder = ($currentDirInfo.Substring(0,$currentDirInfo.LastIndexOf("\")))
+        $relative = $substDriveLetter+($currentDirInfo.Substring($currentDirInfo.LastIndexOf("\")))
+        write-host "Mapping $substDriveLetter to $parentFolder for access via $relative"
+        subst $substDriveLetter $parentFolder
+
+
+        $dirInfo = New-Object System.IO.DirectoryInfo $relative
+
+    }
+    else
+    {
+        $dirInfo = New-Object System.IO.DirectoryInfo $currentDirInfo 
+    }
+
+    # add its details to the currentParentDirInfo object
+    $currentParentDirInfo.Files = @()
+    $currentParentDirInfo.Folders = @()
+    $currentParentDirInfo.SizeBytes = 0;
+    $currentParentDirInfo.Name = $dirInfo.Name;
+    $currentParentDirInfo.Type = "Folder";
     
-    # add its details to the currentNode object
-    $currentNode.Files = @()
-    $currentNode.Folders = @()
-    $currentNode.SizeBytes = 0;
-    $currentNode.Name = $dirInfo.Name;
-    $currentNode.Type = "Folder";
     
+
     # iterate all subdirectories
     try
     {
-        $dirInfo.GetDirectories() | % { 
+        $dirs = $dirInfo.GetDirectories();
+        $files = $dirInfo.GetFiles();
+        # remove any drive mappings created via subst above
+        if (!($substDriveLetter -eq $null))
+        {
+            write-host "removing substitute drive $substDriveLetter"
+            subst $substDriveLetter /D
+            $substDriveLetter = $null
+        }
+
+        $dirs | % { 
             # create a new object for the subfolder to pass in
             $subFolder = @{}
             # call this function in the subfolder. It will return after the entire branch from here down is traversed
-            buildDirectoryTree_Recursive $subFolder ($currentPath + "\" + $_.Name);
+            buildDirectoryTree_Recursive $subFolder ($currentDirInfo + "\" + $_.Name);
             # add the subfolder object to the list of folders at this level
-            $currentNode.Folders += $subFolder;
+            $currentParentDirInfo.Folders += $subFolder;
             # the total size consumed from the subfolder down is now available. 
             # Add it to the running total for the current folder
-            $currentNode.SizeBytes= $currentNode.SizeBytes + $subFolder.SizeBytes;
+            $currentParentDirInfo.SizeBytes= $currentParentDirInfo.SizeBytes + $subFolder.SizeBytes;
             
         }
         # iterate all files
-        $dirInfo.GetFiles() | % { 
+        $files | % { 
             # create a custom object for each file, containing the name and size
             $htmlFileObj = @{};
             $htmlFileObj.Type = "File";
             $htmlFileObj.Name = $_.Name;
             $htmlFileObj.SizeBytes = $_.Length
             # add the file object to the list of files at this level
-            $currentNode.Files += $htmlFileObj;
+            $currentParentDirInfo.Files += $htmlFileObj;
             # add the file's size to the running total for the current folder
-            $currentNode.SizeBytes= $currentNode.SizeBytes + $_.Length
+            $currentParentDirInfo.SizeBytes= $currentParentDirInfo.SizeBytes + $_.Length
         }
     }
     catch [Exception]
     {
         if ($_.Exception.Message.StartsWith('Access to the path'))
         {
-            $currentNode.Name = $currentNode.Name + " (Access Denied to this location)"
+            $currentParentDirInfo.Name = $currentParentDirInfo.Name + " (Access Denied to this location)"
         }
         else
         {
@@ -461,10 +494,13 @@ bytesFormatter -bytes 102534233454 -notation "MB"
 returns "97,784 MB"
 #>
 function bytesFormatter{param (
-        [Parameter(Mandatory=$true)][decimal] $bytes,
+        [Parameter(Mandatory=$true)][decimal][AllowNull()] $bytes,
         [Parameter(Mandatory=$true)][String] $notation
     )
-    
+    if ($bytes -eq $null)
+    {
+        return "unknown size";
+    }
     $notation = $notation.ToUpper();
     if ($notation -eq 'B')
     {
@@ -601,3 +637,4 @@ function outputNode_Recursive{
         }
     } 
 }
+TreeSizeHtml
