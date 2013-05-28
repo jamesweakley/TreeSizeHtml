@@ -118,7 +118,7 @@ You need to run this function as a user with permission to traverse the tree, ot
 param (
        [Parameter(Mandatory=$true)][String] $paths,
        [Parameter(Mandatory=$true)][String] $reportOutputFolder,
-       [Parameter(Mandatory=$false)][String] $htmlOutputFilenames,
+       [Parameter(Mandatory=$false)][String] $htmlOutputFilenames = $null,
        [Parameter(Mandatory=$false)][String] $zipOutputFilename = $null,
        [Parameter(Mandatory=$false)][int] $topFilesCountPerFolder = 10,
        [Parameter(Mandatory=$false)][int] $folderSizeFilterDepthThreshold = 2,
@@ -134,20 +134,20 @@ function TreeSizeHtml {
     $pathsArray = @();
     $htmlFilenamesArray = @();
     
-    write-host $reportOutputFolder
+
     # check output folder exists
     if (!($reportOutputFolder.EndsWith("\")))
     {
         $reportOutputFolder = $reportOutputFolder + "\"
     }
-    write-host $reportOutputFolder
+
     $reportOutputFolderInfo = New-Object System.IO.DirectoryInfo $reportOutputFolder
     if (!$reportOutputFolderInfo.Exists)
     {
         Throw "Report output folder $reportOutputFolder does not exist"
     }
     
-    write-host $reportOutputFolder
+
     # passing in "ALL" means that all fixed disks are to be included in the report
     if ($paths -eq "ALL")
     {
@@ -159,6 +159,10 @@ function TreeSizeHtml {
     }
     else
     {
+        if ($htmlOutputFilenames -eq $null -or $htmlOutputFilenames -eq '')
+        {
+            throw "paths was not 'ALL', but htmlOutputFilenames was not defined. If paths are defined, then the same number of htmlOutputFileNames must be specified."
+        }
         # split up the paths and htmlOutputFilenames parameters by comma
         $pathsArray = $paths.split(",");
         $htmlFilenamesArray = $htmlOutputFilenames.split(",");
