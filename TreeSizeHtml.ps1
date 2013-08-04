@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 
 A Powershell clone of the classic TreeSize administrators tool. Works on local volumes or network shares.
@@ -405,23 +405,16 @@ function buildDirectoryTree_Recursive {
             [Parameter(Mandatory=$true)][String] $currentDirInfo 
         )  
     $substDriveLetter = $null
-    # Get the directory info of the current path
-
+    
     # if the current directory length is too long, try to work around the feeble Windows size limit by using the subst command
     if ($currentDirInfo.Length -gt 248)
     {
-    	if ($currentDirInfo.Contains("`$Recycle.Bin"))
-        {
-            write-host "Skipping path under `$Recycle.Bin folder that is too long";
-            return;
-        }
         Write-Host "$currentDirInfo has a length of $($currentDirInfo.Length), greater than the maximum 248, invoking workaround"
         $substDriveLetter = ls function:[d-z]: -n | ?{ !(test-path $_) } | select -First 1
         $parentFolder = ($currentDirInfo.Substring(0,$currentDirInfo.LastIndexOf("\")))
         $relative = $substDriveLetter+($currentDirInfo.Substring($currentDirInfo.LastIndexOf("\")))
         write-host "Mapping $substDriveLetter to $parentFolder for access via $relative"
         subst $substDriveLetter $parentFolder
-
 
         $dirInfo = New-Object System.IO.DirectoryInfo $relative
 
@@ -443,8 +436,7 @@ function buildDirectoryTree_Recursive {
     # iterate all subdirectories
     try
     {
-    	#don't include reparse points
-        $dirs = $dirInfo.GetDirectories() | where {!$_.Attributes.ToString().Contains("ReparsePoint")};
+        $dirs = $dirInfo.GetDirectories() | where {!$_.Attributes.ToString().Contains("ReparsePoint")}; #don't include reparse points
         $files = $dirInfo.GetFiles();
         # remove any drive mappings created via subst above
         if (!($substDriveLetter -eq $null))
@@ -457,6 +449,10 @@ function buildDirectoryTree_Recursive {
         $dirs | % { 
             # create a new object for the subfolder to pass in
             $subFolder = @{}
+            if ($_.Name.length -lt 1)
+            {
+                return;
+            }
             # call this function in the subfolder. It will return after the entire branch from here down is traversed
             buildDirectoryTree_Recursive $subFolder ($currentDirInfo + "\" + $_.Name);
             # add the subfolder object to the list of folders at this level
