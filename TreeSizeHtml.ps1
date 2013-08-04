@@ -410,6 +410,11 @@ function buildDirectoryTree_Recursive {
     # if the current directory length is too long, try to work around the feeble Windows size limit by using the subst command
     if ($currentDirInfo.Length -gt 248)
     {
+    	if ($currentDirInfo.Contains("`$Recycle.Bin"))
+        {
+            write-host "Skipping path under `$Recycle.Bin folder that is too long";
+            return;
+        }
         Write-Host "$currentDirInfo has a length of $($currentDirInfo.Length), greater than the maximum 248, invoking workaround"
         $substDriveLetter = ls function:[d-z]: -n | ?{ !(test-path $_) } | select -First 1
         $parentFolder = ($currentDirInfo.Substring(0,$currentDirInfo.LastIndexOf("\")))
@@ -438,7 +443,8 @@ function buildDirectoryTree_Recursive {
     # iterate all subdirectories
     try
     {
-        $dirs = $dirInfo.GetDirectories();
+    	#don't include reparse points
+        $dirs = $dirInfo.GetDirectories() | where {!$_.Attributes.ToString().Contains("ReparsePoint")};
         $files = $dirInfo.GetFiles();
         # remove any drive mappings created via subst above
         if (!($substDriveLetter -eq $null))
