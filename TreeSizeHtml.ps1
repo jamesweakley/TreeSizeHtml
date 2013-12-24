@@ -1,118 +1,118 @@
-<#
-.SYNOPSIS
 
-A Powershell clone of the classic TreeSize administrators tool. Works on local volumes or network shares.
+#.SYNOPSIS
+#
+# A Powershell clone of the classic TreeSize administrators tool. Works on local volumes or network shares.
+#
+# Outputs the report to one or more interactive HTML files, and optionally zips them into a single zip file.
+# 
+# Requires Powershell 2. For Windows 2003 servers, install http://support.microsoft.com/kb/968930
+# 
+# Author: James Weakley (jameswillisweakley@gmail.com)
+# 
+#.DESCRIPTION
+# 
+# Recursively iterates a folder structure and reports on the space consumed below each individual folder. 
+# Outputs to a single HTML file which, with the help of a couple of third party javascript libraries,
+# displays in a web browser as an expandable tree, sorted by largest first.
+# 
+#.PARAMETER paths 
+#
+# One or more comma separated locations to report on. 
+# A report on each of these locations will be output to a single HTML file per location, defined by htmlOutputFilenames
+#
+# Pass in the value "ALL" to report on all fixed disks.
+#
+#.PARAMETER reportOutputFolder
+#
+# The folder location to output the HTML report(s) and zip file. This folder must exist already.
+#
+#.PARAMETER htmlOutputFilenames
+#
+# One or more comma separated filenames to output the HTML reports to. There must be one of these to correspond with each path specified.
+#
+# If "ALL" is specified for paths, then this parameter is ignored and the reports use the filenames "C_Drive.html","D_Drive.html", and so on
+#
+#.PARAMETER zipOutputFilename
+#
+# Name of zip file to place all generated HTML reports in.
+# 
+# If this value is empty, HTML files are not zipped up.
+#
+#.PARAMETER topFilesCountPerFolder
+#
+# Setting this parameter filters the number of files shown at each level.
+#
+# For example, setting it to 10 will mean that at each folder level, only the largest 10 files will be displayed in the report. 
+# The count and sum total size of all other files will be shown as one item.
+#
+# The default value is 20. 
+#
+# Setting the value to -1 disables filtering and always displays all files. Note that this may generate HTML files large enough to crash your web browser!
+#
+#.PARAMETER folderSizeFilterDepthThreshold
+#
+#Enables a folder size filter which, in conjunction with folderSizeFilterMinSize, excludes from the report sections of the tree that are smaller than a particular size.
+#
+# This value determines how many subfolders deep to travel before applying the filter.
+#
+# The default value is 8
+#
+# Note that this filter does not affect the accuracy of the report. The total size of the filtered out branches are still displayed in the report, you just can't drill down any further.
+#
+# Setting the value to -1 disables filtering and always displays all files. Note that this may generate HTML files large enough to crash your web browser!
+#
+#.PARAMETER folderSizeFilterMinSize
+#
+# Used in conjunction with folderSizeFilterDepthThreshold to excludes from the report sections of the tree that are smaller than a particular size.
+#
+# This value is in bytes.
+#
+# The default value is 104857600 (100MB)
+#
+#.PARAMETER displayUnits
+#
+# A string which must be one of "B","KB","MB","GB","TB". This is the units to display in the report.
+#
+# The default value is MB
+#
+#.EXAMPLE
+#
+# TreeSizeHtml -paths "C:\" -reportOutputFolder "C:\temp" -htmlOutputFilenames "c_drive.html"
+#
+# This will output a report on C:\ to C:\temp\c_drive.html using the default filter settings.
+#
+#
+#.EXAMPLE
+#
+#TreeSizeHtml -paths "C:\,D:\" -reportOutputFolder "C:\temp" -htmlOutputFilenames "c_drive.html,d_drive.html" -zipOutputFilename "report.zip"
+#
+# This will output two size reports: 
+# - A report on C:\ to C:\temp\c_drive.html
+# - A report on D:\ to C:\temp\d_drive.html
+#
+# Both reports will be placed in a zip file at "C:\temp\report.zip"
+#
+#.EXAMPLE 
+#
+# TreeSizeHtml -paths "\\nas\ServerBackups" -reportOutputFolder "C:\temp" -htmlOutputFilenames "nas_server_backups.html" -topFilesCountPerFolder -1 -folderSizeFilterDepthThreshold -1
+#
+# This will output a report on \\nas\ServerBackups to c:\temp\nas_server_backups.html
+#
+# The report will include all files and folders, no matter how many or how small
+#
+#.EXAMPLE 
+#
+# TreeSizeHtml -paths "E:\" -reportOutputFolder "C:\temp" -htmlOutputFilenames "e_drive_summary.html" -folderSizeFilterDepthThreshold 0 -folderSizeFilterMinSize 1073741824
+#
+# This will output a report on E:\ to c:\temp\e_drive_summary.html
+#
+# As soon as a branch accounts for less than 1GB of space, it is excluded from the report.
+#
+#.NOTES
+#
+# You need to run this function as a user with permission to traverse the tree, otherwise you'll have sections of the tree labeled 'Permission Denied'
+#
 
-Outputs the report to one or more interactive HTML files, and optionally zips them into a single zip file.
-
-Requires Powershell 2. For Windows 2003 servers, install http://support.microsoft.com/kb/968930
-
-Author: James Weakley (jameswillisweakley@gmail.com)
-
-.DESCRIPTION
-
-Recursively iterates a folder structure and reports on the space consumed below each individual folder. 
-Outputs to a single HTML file which, with the help of a couple of third party javascript libraries,
-displays in a web browser as an expandable tree, sorted by largest first.
-
-.PARAMETER paths 
-
-One or more comma separated locations to report on. 
-A report on each of these locations will be output to a single HTML file per location, defined by htmlOutputFilenames
-
-Pass in the value "ALL" to report on all fixed disks.
-
-.PARAMETER reportOutputFolder
-
-The folder location to output the HTML report(s) and zip file. This folder must exist already.
-
-.PARAMETER htmlOutputFilenames
-
-One or more comma separated filenames to output the HTML reports to. There must be one of these to correspond with each path specified.
-
-If "ALL" is specified for paths, then this parameter is ignored and the reports use the filenames "C_Drive.html","D_Drive.html", and so on
-
-.PARAMETER zipOutputFilename
-
-Name of zip file to place all generated HTML reports in.
-
-If this value is empty, HTML files are not zipped up.
-
-.PARAMETER topFilesCountPerFolder
-
-Setting this parameter filters the number of files shown at each level.
-
-For example, setting it to 10 will mean that at each folder level, only the largest 10 files will be displayed in the report. 
-The count and sum total size of all other files will be shown as one item.
-
-The default value is 20. 
-
-Setting the value to -1 disables filtering and always displays all files. Note that this may generate HTML files large enough to crash your web browser!
-
-.PARAMETER folderSizeFilterDepthThreshold
-
-Enables a folder size filter which, in conjunction with folderSizeFilterMinSize, excludes from the report sections of the tree that are smaller than a particular size.
-
-This value determines how many subfolders deep to travel before applying the filter.
-
-The default value is 8
-
-Note that this filter does not affect the accuracy of the report. The total size of the filtered out branches are still displayed in the report, you just can't drill down any further.
-
-Setting the value to -1 disables filtering and always displays all files. Note that this may generate HTML files large enough to crash your web browser!
-
-.PARAMETER folderSizeFilterMinSize
-
-Used in conjunction with folderSizeFilterDepthThreshold to excludes from the report sections of the tree that are smaller than a particular size.
-
-This value is in bytes.
-
-The default value is 104857600 (100MB)
-
-.PARAMETER displayUnits
-
-A string which must be one of "B","KB","MB","GB","TB". This is the units to display in the report.
-
-The default value is MB
-
-.EXAMPLE
-
-TreeSizeHtml -paths "C:\" -reportOutputFolder "C:\temp" -htmlOutputFilenames "c_drive.html"
-
-This will output a report on C:\ to C:\temp\c_drive.html using the default filter settings.
-
-
-.EXAMPLE
-
-TreeSizeHtml -paths "C:\,D:\" -reportOutputFolder "C:\temp" -htmlOutputFilenames "c_drive.html,d_drive.html" -zipOutputFilename "report.zip"
-
-This will output two size reports: 
-- A report on C:\ to C:\temp\c_drive.html
-- A report on D:\ to C:\temp\d_drive.html
-
-Both reports will be placed in a zip file at "C:\temp\report.zip"
-
-.EXAMPLE 
-
-TreeSizeHtml -paths "\\nas\ServerBackups" -reportOutputFolder "C:\temp" -htmlOutputFilenames "nas_server_backups.html" -topFilesCountPerFolder -1 -folderSizeFilterDepthThreshold -1
-
-This will output a report on \\nas\ServerBackups to c:\temp\nas_server_backups.html
-
-The report will include all files and folders, no matter how many or how small
-
-.EXAMPLE 
-
-TreeSizeHtml -paths "E:\" -reportOutputFolder "C:\temp" -htmlOutputFilenames "e_drive_summary.html" -folderSizeFilterDepthThreshold 0 -folderSizeFilterMinSize 1073741824
-
-This will output a report on E:\ to c:\temp\e_drive_summary.html
-
-As soon as a branch accounts for less than 1GB of space, it is excluded from the report.
-
-.NOTES
-
-You need to run this function as a user with permission to traverse the tree, otherwise you'll have sections of the tree labeled 'Permission Denied'
-
-#>
 #requires -version 2
 
 param (
@@ -381,24 +381,24 @@ function TreeSizeHtml {
         set-acl $zipOutputFilename -AclObject $inheritance
     }
     
-} 
-<#
-.SYNOPSIS
+}
+ 
 
-Used internally by the TreeSizeHtml function. 
+#.SYNOPSIS
+#
+# Used internally by the TreeSizeHtml function. 
+#
+# Used to perform Depth-First (http://en.wikipedia.org/wiki/Depth-first_search) search of the entire folder structure. 
+# This allows the cumulative total of space used to be added up during backtracking.
+#
+#.PARAMETER currentNode 
+#
+# The current node object, a temporary custom object which represents the current folder in the tree.
+#
+#.PARAMETER currentPath
+#
+# The path to the current folder in the tree
 
-Used to perform Depth-First (http://en.wikipedia.org/wiki/Depth-first_search) search of the entire folder structure. 
-This allows the cumulative total of space used to be added up during backtracking.
-
-.PARAMETER currentNode 
-
-The current node object, a temporary custom object which represents the current folder in the tree.
-
-.PARAMETER currentPath
-
-The path to the current folder in the tree
-
-#>
 function buildDirectoryTree_Recursive {  
         param (  
             [Parameter(Mandatory=$true)][Object] $currentParentDirInfo,  
@@ -487,18 +487,18 @@ function buildDirectoryTree_Recursive {
         }
     }
 } 
-<#
-.SYNOPSIS
 
-Used internally by the TreeSizeHtml function. 
+#.SYNOPSIS
+#
+# Used internally by the TreeSizeHtml function. 
+#
+# Takes a number in bytes, and a string which must be one of B,KB,MB,GB,TB and returns a nicely formatted converted string.
+#
+#.EXAMPLE 
+#
+# bytesFormatter -bytes 102534233454 -notation "MB"
+# returns "97,784 MB"
 
-Takes a number in bytes, and a string which must be one of B,KB,MB,GB,TB and returns a nicely formatted converted string.
-
-.EXAMPLE 
-
-bytesFormatter -bytes 102534233454 -notation "MB"
-returns "97,784 MB"
-#>
 function bytesFormatter{param (
         [Parameter(Mandatory=$true)][decimal][AllowNull()] $bytes,
         [Parameter(Mandatory=$true)][String] $notation
@@ -531,13 +531,13 @@ function bytesFormatter{param (
     Throw "Unrecognised notation: $notation. Must be one of B,KB,MB,GB,TB"
 }
 
-<#
-.SYNOPSIS
 
-Used internally by the TreeSizeHtml function. 
+#.SYNOPSIS
+#
+# Used internally by the TreeSizeHtml function. 
+#
+# Takes a number and returns it as a string with commas as thousand separators, rounded to 2dp 
 
-Takes a number and returns it as a string with commas as thousand separators, rounded to 2dp 
-#>
 function roundOffAndAddCommas{param(
     [Parameter(Mandatory=$true)][decimal] $number)
     $value = "{0:N2}" -f $number;
@@ -549,18 +549,18 @@ function sbAppend{param(
     $sb.Append($stringToAppend) | out-null;
 }
 
-<#
-.SYNOPSIS
 
-Used internally by the TreeSizeHtml function. 
+#.SYNOPSIS
+#
+# Used internally by the TreeSizeHtml function. 
+#
+# Used to output the folder tree to a StringBuffer in the format of an HTML unordered list which the TreeView library can display.
+#
+#.PARAMETER node 
+#
+# The current node object, a temporary custom object which represents the current folder in the tree.
+#
 
-Used to output the folder tree to a StringBuffer in the format of an HTML unordered list which the TreeView library can display.
-
-.PARAMETER node 
-
-The current node object, a temporary custom object which represents the current folder in the tree.
-
-#>
 function outputNode_Recursive{
     param (
         [Parameter(Mandatory=$true)][Object] $node,
