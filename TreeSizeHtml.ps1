@@ -250,7 +250,7 @@ function TreeSizeHtml {
         sbAppend "<head>"
         # jquery javascript src (from web)
         sbAppend "<link rel=`"stylesheet`" href=`"http://jquery.bassistance.de/treeview/jquery.treeview.css`" />"
-        sbAppend "<script src='http://static.jstree.com/v.1.0pre/jquery.js' type='text/javascript'></script>"
+        sbAppend "<script src='http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js' type='text/javascript'></script>"
         # jstree javascript src (from web)
         sbAppend "<script src='http://jquery.bassistance.de/treeview/jquery.treeview.js' type='text/javascript'></script>"
         sbAppend "<script type='text/javascript'>"
