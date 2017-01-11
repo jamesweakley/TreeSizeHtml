@@ -297,7 +297,7 @@ function TreeSizeHtml {
         
         
         # include a loading message and spinny icon while jsTree initialises
-        $sbAppend "<div id='tree'>Loading...<img src='https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.3/themes/default/throbber.gif'/></div>"
+        sbAppend "<div id='tree'>Loading...<img src='https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.3/themes/default/throbber.gif'/></div>"
         sbAppend "</body>"
         sbAppend "</html>"
         
