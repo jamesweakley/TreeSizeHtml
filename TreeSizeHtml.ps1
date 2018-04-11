@@ -251,7 +251,7 @@ function TreeSizeHtml {
         sbAppend "</head>"
         sbAppend "<body>"
         sbAppend "<div id='header'>"
-        sbAppend "<h1>Disk utilisation report</h1>"
+        sbAppend "<h1>Disk utilization report</h1>"
         sbAppend "<h3>Root Directory: ($($dirInfo.FullName))</h3>"
         $machine = hostname
         sbAppend "<h3>Generated on machine: $machine</h3>"
