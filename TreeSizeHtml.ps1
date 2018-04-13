@@ -239,15 +239,16 @@ function TreeSizeHtml {
         sbAppend "<html>"
         sbAppend "<head>"
         # jquery javascript src (from web)
-        sbAppend "<link rel=`"stylesheet`" href=`"https://cdnjs.cloudflare.com/ajax/libs/jstree/3.2.1/themes/default/style.min.css`" />"
+        sbAppend "<link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/jstree/3.2.1/themes/default/style.min.css' />"
         sbAppend "<script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.1/jquery.min.js' type='text/javascript'></script>"
         # jstree javascript src (from web)
-        sbAppend "<script src=`"https://cdnjs.cloudflare.com/ajax/libs/jstree/3.2.1/jstree.min.js`" type='text/javascript'></script>"
-        sbAppend "<script type='text/javascript'>"
-        sbAppend "  `$(function () {"
-        sbAppend "    `$('#jstree').jstree();"
-        sbAppend "   });"
-        sbAppend "</script>"
+        sbAppend "<script src='https://cdnjs.cloudflare.com/ajax/libs/jstree/3.2.1/jstree.min.js' type='text/javascript'></script>"
+        sbAppend "<script type='text/javascript'>`$(document).ready(function(){var a=`$('#jstree'),b=`$('#loading');a.on('loading.jstree',function(){return b.removeClass('hidden')}).on('loaded.jstree',function(){return b.addClass('hidden')}),a.jstree()})</script>"
+		sbAppend "<style>"
+		sbAppend ".hidden {"
+		sbAppend "  visibility: hidden;"
+		sbAppend "}"
+		sbAppend "</style>"
         sbAppend "</head>"
         sbAppend "<body>"
         sbAppend "<div id='header'>"
@@ -278,8 +279,10 @@ function TreeSizeHtml {
         
         sbAppend "</ul>"
         sbAppend "</div>"
-        sbAppend "<div id='error'/>"
-        sbAppend "<div id='jstree''>"
+        sbAppend "<div id='error'></div>"
+		# include a loading message and spinny icon while jsTree initialises
+        sbAppend "<div id='loading'>Loading...<img src='https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.3/themes/default/throbber.gif'/></div>"
+        sbAppend "<div id='jstree'>"
         sbAppend "<ul id='tree'>"
         
         $size = bytesFormatter $treeStructureObj.SizeBytes $displayUnits
@@ -296,8 +299,7 @@ function TreeSizeHtml {
         
         
         
-        # include a loading message and spinny icon while jsTree initialises
-        sbAppend "<div id='tree'>Loading...<img src='https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.3/themes/default/throbber.gif'/></div>"
+        
         sbAppend "</body>"
         sbAppend "</html>"
         
